@@ -85,25 +85,29 @@ class DefaultFirebaseOptions {
   /// - appId: Your Firebase app ID
   /// - messagingSenderId: For Firebase Cloud Messaging
   /// - projectId: Your Firebase project ID
-  /// - storageBucket: Your Firebase Storage bucket
+
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_API_KEY',
-    appId: 'YOUR_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyB0qx0OVKKin25IrJUVphN3YDVU_VA2P9s',
+    appId: '1:593104511265:android:2f9249398fdc612a44de60',
+    messagingSenderId: '593104511265',
+    projectId: 'group31-formative-assignment1',
+    storageBucket: 'group31-formative-assignment1.firebasestorage.app',
   );
+
+  /// - storageBucket: Your Firebase Storage bucket
 
   /// Firebase configuration for iOS
   ///
   /// These values will be replaced when you run 'flutterfire configure'.
-  /// iOS configuration includes an additional iosBundleId field.
+
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_API_KEY',
-    appId: 'YOUR_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
-    iosBundleId: 'com.group31.formativeAssignment1',
+    apiKey: 'AIzaSyBLxKR-_vH443y1lSpzN64lYgqVUyCpTTQ',
+    appId: '1:593104511265:ios:ec5b93e61d42361944de60',
+    messagingSenderId: '593104511265',
+    projectId: 'group31-formative-assignment1',
+    storageBucket: 'group31-formative-assignment1.firebasestorage.app',
+    iosBundleId: 'com.example.aluAcademicPlatform',
   );
+
+  /// iOS configuration includes an additional iosBundleId field.
 }
