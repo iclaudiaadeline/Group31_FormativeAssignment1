@@ -349,7 +349,7 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
 
                 // Session Type Dropdown
                 DropdownButtonFormField<SessionType>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: const InputDecoration(
                     labelText: 'Session Type',
                     border: OutlineInputBorder(),
