@@ -43,10 +43,7 @@ class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     // Web platform is not supported for this mobile-only app
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
 
     // Return platform-specific configuration
@@ -110,4 +107,14 @@ class DefaultFirebaseOptions {
   );
 
   /// iOS configuration includes an additional iosBundleId field.
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyC2FEb3SEt-JdtwcEXSMDRMkDI2HG84DCw',
+    appId: '1:593104511265:web:4a5f0d18921f552244de60',
+    messagingSenderId: '593104511265',
+    projectId: 'group31-formative-assignment1',
+    authDomain: 'group31-formative-assignment1.firebaseapp.com',
+    storageBucket: 'group31-formative-assignment1.firebasestorage.app',
+  );
+
 }
