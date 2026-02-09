@@ -135,3 +135,5 @@ Good luck! 🚀
 **Last Updated**: February 8, 2026  
 **Branch**: main  
 **Status**: Ready for Developer 4 (Claudia)
+
+also ensure to work on your local branch
