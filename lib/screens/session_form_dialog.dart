@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/session.dart';
 import '../models/session_validator.dart';
 import '../providers/session_provider.dart';
+import '../utils/error_handler.dart';
 
 /// Dialog for creating or editing a session
 class SessionFormDialog extends StatefulWidget {
@@ -90,8 +91,7 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
   Future<void> _selectEndTime() async {
     final picked = await showTimePicker(
       context: context,
-      initialTime:
-          _selectedEndTime ??
+      initialTime: _selectedEndTime ??
           TimeOfDay.now().replacing(hour: (TimeOfDay.now().hour + 1) % 24),
     );
 
@@ -121,9 +121,8 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
 
   /// Format time for display
   String _formatTime(TimeOfDay time) {
-    final hour = time.hour > 12
-        ? time.hour - 12
-        : (time.hour == 0 ? 12 : time.hour);
+    final hour =
+        time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
@@ -153,9 +152,8 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
     // Validate date and time fields
     setState(() {
       _dateError = SessionValidator.validateDate(_selectedDate);
-      _startTimeError = _selectedStartTime == null
-          ? 'Start time is required'
-          : null;
+      _startTimeError =
+          _selectedStartTime == null ? 'Start time is required' : null;
       _endTimeError = _selectedEndTime == null ? 'End time is required' : null;
       _timeRangeError = SessionValidator.validateTimeRange(
         _selectedStartTime,
@@ -216,9 +214,20 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
         _isLoading = false;
       });
       if (mounted) {
+        final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(
+          SnackBar(
+            content: Text('Error: $errorMessage'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _saveSession,
+            ),
+          ),
+        );
       }
     }
   }
@@ -349,7 +358,7 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
 
                 // Session Type Dropdown
                 DropdownButtonFormField<SessionType>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: const InputDecoration(
                     labelText: 'Session Type',
                     border: OutlineInputBorder(),
@@ -379,9 +388,8 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
                   children: [
                     // Cancel Button
                     TextButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => Navigator.of(context).pop(),
+                      onPressed:
+                          _isLoading ? null : () => Navigator.of(context).pop(),
                       child: const Text('Cancel'),
                     ),
                     const SizedBox(width: 8),

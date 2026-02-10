@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/session.dart';
 import '../services/session_service.dart';
+import '../utils/error_handler.dart';
 
 /// Provider for managing session state and operations
 /// Extends ChangeNotifier to notify listeners of state changes
@@ -35,7 +36,7 @@ class SessionProvider extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) {
-        _setError(error.toString());
+        _setError(FirestoreErrorHandler.getErrorMessage(error));
         _setLoading(false);
         notifyListeners();
       },
@@ -53,9 +54,10 @@ class SessionProvider extends ChangeNotifier {
       await _service.createSession(session);
       // Stream will automatically update the list
       _setLoading(false);
-      notifyListeners();
+      // No need to notify here - stream will trigger update
     } catch (e) {
-      _setError(e.toString());
+      final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
+      _setError(errorMessage);
       _setLoading(false);
       notifyListeners();
       rethrow;
@@ -73,9 +75,10 @@ class SessionProvider extends ChangeNotifier {
       await _service.updateSession(session);
       // Stream will automatically update the list
       _setLoading(false);
-      notifyListeners();
+      // No need to notify here - stream will trigger update
     } catch (e) {
-      _setError(e.toString());
+      final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
+      _setError(errorMessage);
       _setLoading(false);
       notifyListeners();
       rethrow;
@@ -93,9 +96,10 @@ class SessionProvider extends ChangeNotifier {
       await _service.deleteSession(id);
       // Stream will automatically update the list
       _setLoading(false);
-      notifyListeners();
+      // No need to notify here - stream will trigger update
     } catch (e) {
-      _setError(e.toString());
+      final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
+      _setError(errorMessage);
       _setLoading(false);
       notifyListeners();
       rethrow;
@@ -113,9 +117,10 @@ class SessionProvider extends ChangeNotifier {
       await _service.recordAttendance(id, status);
       // Stream will automatically update the list
       _setLoading(false);
-      notifyListeners();
+      // No need to notify here - stream will trigger update
     } catch (e) {
-      _setError(e.toString());
+      final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
+      _setError(errorMessage);
       _setLoading(false);
       notifyListeners();
       rethrow;

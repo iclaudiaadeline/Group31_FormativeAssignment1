@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/assignment_provider.dart';
 import '../widgets/assignment_card.dart';
+import '../widgets/sync_status_indicator.dart';
 import 'assignment_form_dialog.dart';
+import '../utils/error_handler.dart';
 
 class AssignmentsScreen extends StatefulWidget {
   const AssignmentsScreen({super.key});
@@ -27,6 +29,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
       appBar: AppBar(
         title: const Text('Assignments'),
         actions: [
+          const SyncStatusIndicator(compact: true),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _showAssignmentForm(context),
@@ -169,7 +172,24 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     );
 
     if (confirmed == true && context.mounted) {
-      await provider.deleteAssignment(assignmentId);
+      try {
+        await provider.deleteAssignment(assignmentId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Assignment deleted successfully')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting assignment: $errorMessage'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 }

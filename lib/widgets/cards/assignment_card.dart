@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
+import '../../config/colors.dart';
 
 class AssignmentCard extends StatelessWidget {
   final String title;

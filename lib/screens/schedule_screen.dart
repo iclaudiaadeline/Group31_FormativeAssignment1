@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../models/session.dart';
 import '../providers/session_provider.dart';
 import '../widgets/session_card.dart';
+import '../widgets/sync_status_indicator.dart';
 import 'session_form_dialog.dart';
+import '../utils/error_handler.dart';
 import 'attendance_dialog.dart';
 
 /// Screen for displaying and managing academic sessions organized by week
@@ -162,9 +164,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         }
       } catch (e) {
         if (context.mounted) {
+          final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Error deleting session: $e')));
+          ).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting session: $errorMessage'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
     }
@@ -176,6 +184,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       appBar: AppBar(
         title: const Text('Schedule'),
         actions: [
+          const SyncStatusIndicator(compact: true),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _showAddSessionDialog(context),

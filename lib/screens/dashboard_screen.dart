@@ -6,6 +6,7 @@ import '../config/colors.dart';
 import '../widgets/attendance_status_widget.dart';
 import '../widgets/session_type_badge.dart';
 import '../widgets/priority_badge.dart';
+import '../widgets/sync_status_indicator.dart';
 
 /// Dashboard screen displaying academic overview
 ///
@@ -19,12 +20,17 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  bool _hasLoadedOnce = false;
+
   @override
   void initState() {
     super.initState();
-    // Load dashboard data on init
+    // Load dashboard data on init only if not already loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardProvider>().loadDashboard();
+      if (!_hasLoadedOnce) {
+        context.read<DashboardProvider>().loadDashboard();
+        _hasLoadedOnce = true;
+      }
     });
   }
 
@@ -38,6 +44,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('ALU Academic Platform'),
         centerTitle: false,
+        actions: const [
+          SyncStatusIndicator(showText: true),
+          SizedBox(width: 8),
+        ],
       ),
       body: Consumer<DashboardProvider>(
         builder: (context, provider, child) {
@@ -87,6 +97,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Offline badge banner
+                  const OfflineBadge(),
+
                   // Current Date Widget
                   _CurrentDateWidget(date: summary.currentDate),
                   const SizedBox(height: 16),
@@ -343,7 +356,13 @@ class _SessionListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeFormat = DateFormat('h:mm a');
+    // Helper function to format TimeOfDay
+    String formatTime(TimeOfDay time) {
+      final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+      final minute = time.minute.toString().padLeft(2, '0');
+      final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+      return '$hour:$minute $period';
+    }
 
     return Row(
       children: [
@@ -361,7 +380,7 @@ class _SessionListItem extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${timeFormat.format(session.startTime)} - ${timeFormat.format(session.endTime)}',
+                '${formatTime(session.startTime)} - ${formatTime(session.endTime)}',
                 style: const TextStyle(color: Colors.white70, fontSize: 14),
               ),
               const SizedBox(height: 4),

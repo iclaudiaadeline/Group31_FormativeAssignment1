@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/assignment.dart';
 import '../services/assignment_service.dart';
+import '../utils/error_handler.dart';
 
 /// Provider for managing assignment state and operations
 /// Extends ChangeNotifier to notify listeners of state changes
@@ -35,7 +36,7 @@ class AssignmentProvider extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) {
-        _setError(error.toString());
+        _setError(FirestoreErrorHandler.getErrorMessage(error));
         _setLoading(false);
         notifyListeners();
       },
@@ -53,9 +54,10 @@ class AssignmentProvider extends ChangeNotifier {
       await _service.createAssignment(assignment);
       // Stream will automatically update the list
       _setLoading(false);
-      notifyListeners();
+      // No need to notify here - stream will trigger update
     } catch (e) {
-      _setError(e.toString());
+      final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
+      _setError(errorMessage);
       _setLoading(false);
       notifyListeners();
       rethrow;
@@ -73,9 +75,10 @@ class AssignmentProvider extends ChangeNotifier {
       await _service.updateAssignment(assignment);
       // Stream will automatically update the list
       _setLoading(false);
-      notifyListeners();
+      // No need to notify here - stream will trigger update
     } catch (e) {
-      _setError(e.toString());
+      final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
+      _setError(errorMessage);
       _setLoading(false);
       notifyListeners();
       rethrow;
@@ -93,9 +96,10 @@ class AssignmentProvider extends ChangeNotifier {
       await _service.deleteAssignment(id);
       // Stream will automatically update the list
       _setLoading(false);
-      notifyListeners();
+      // No need to notify here - stream will trigger update
     } catch (e) {
-      _setError(e.toString());
+      final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
+      _setError(errorMessage);
       _setLoading(false);
       notifyListeners();
       rethrow;
@@ -113,9 +117,10 @@ class AssignmentProvider extends ChangeNotifier {
       await _service.toggleAssignmentCompletion(id);
       // Stream will automatically update the list
       _setLoading(false);
-      notifyListeners();
+      // No need to notify here - stream will trigger update
     } catch (e) {
-      _setError(e.toString());
+      final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
+      _setError(errorMessage);
       _setLoading(false);
       notifyListeners();
       rethrow;

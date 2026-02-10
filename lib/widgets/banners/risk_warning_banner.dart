@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
+import '../../config/colors.dart';
 
 class RiskWarningBanner extends StatelessWidget {
   const RiskWarningBanner({super.key});
@@ -12,8 +12,8 @@ class RiskWarningBanner extends StatelessWidget {
         color: AppColors.danger,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        children: const [
+      child: const Row(
+        children: [
           Icon(Icons.warning, color: Colors.white),
           SizedBox(width: 10),
           Text(

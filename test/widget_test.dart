@@ -3,7 +3,7 @@
 // This test verifies that the app can be instantiated and rendered.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:group31_formative_assignment1/main.dart';
+import 'package:alu_academic_platform/main.dart';
 
 void main() {
   testWidgets('App smoke test - MainApp can be instantiated', (

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/assignment.dart';
 import '../models/assignment_validator.dart';
 import '../providers/assignment_provider.dart';
+import '../utils/error_handler.dart';
 
 class AssignmentFormDialog extends StatefulWidget {
   final Assignment? assignment;
@@ -103,8 +104,7 @@ class _AssignmentFormDialogState extends State<AssignmentFormDialog> {
                       labelText: 'Due Date',
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.calendar_today),
-                      errorText:
-                          _selectedDueDate == null &&
+                      errorText: _selectedDueDate == null &&
                               _formKey.currentState?.validate() == false
                           ? AssignmentValidator.validateDueDate(null)
                           : null,
@@ -127,7 +127,7 @@ class _AssignmentFormDialogState extends State<AssignmentFormDialog> {
 
                 // Priority dropdown
                 DropdownButtonFormField<PriorityLevel>(
-                  value: _selectedPriority,
+                  initialValue: _selectedPriority,
                   decoration: const InputDecoration(
                     labelText: 'Priority',
                     border: OutlineInputBorder(),
@@ -278,9 +278,10 @@ class _AssignmentFormDialogState extends State<AssignmentFormDialog> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
+        final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Error: $errorMessage'),
             backgroundColor: Colors.red,
             action: SnackBarAction(
               label: 'Retry',

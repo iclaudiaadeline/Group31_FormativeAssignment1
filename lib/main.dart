@@ -9,8 +9,19 @@ library;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'config/theme.dart';
+import 'providers/assignment_provider.dart';
+import 'providers/session_provider.dart';
+import 'providers/dashboard_provider.dart';
+import 'providers/connectivity_provider.dart';
+import 'services/assignment_service.dart';
+import 'services/session_service.dart';
+import 'services/attendance_service.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/assignments_screen.dart';
+import 'screens/schedule_screen.dart';
 
 /// Application entry point
 ///
@@ -48,31 +59,156 @@ void main() async {
 /// Main application widget
 ///
 /// This is the root widget of the application. It sets up the MaterialApp
-/// with theme configuration and initial home screen.
+/// with theme configuration, state management providers, and navigation.
 ///
-/// Currently displays a placeholder screen during development.
-/// Will be replaced with proper navigation structure in Phase 7.
+/// Uses MultiProvider to inject all necessary providers into the widget tree,
+/// making them available to all screens and widgets in the app.
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      // Application title shown in task switcher
-      title: 'ALU Academic Platform',
+    // Initialize services
+    final assignmentService = AssignmentService();
+    final sessionService = SessionService();
+    final attendanceService = AttendanceService();
 
-      // Theme configuration with ALU branding
-      theme: AppTheme.buildALUTheme(),
-
-      // Temporary home screen during setup phase
-      // Will be replaced with MainNavigationScreen in Task 18
-      home: const Scaffold(
-        body: Center(
-          child: Text(
-            'ALU Academic Platform - Setup in Progress',
-            style: TextStyle(fontSize: 18),
-          ),
+    return MultiProvider(
+      providers: [
+        // Connectivity monitoring provider
+        ChangeNotifierProvider(
+          create: (_) => ConnectivityProvider()..initialize(),
         ),
+        // Assignment management provider
+        ChangeNotifierProvider(
+          create: (_) =>
+              AssignmentProvider(service: assignmentService)..initialize(),
+        ),
+        // Session scheduling provider
+        ChangeNotifierProvider(
+          create: (_) => SessionProvider(service: sessionService)..initialize(),
+        ),
+        // Dashboard aggregation provider
+        ChangeNotifierProvider(
+          create: (_) => DashboardProvider(
+            assignmentService: assignmentService,
+            sessionService: sessionService,
+            attendanceService: attendanceService,
+          )..loadDashboard(),
+        ),
+      ],
+      child: MaterialApp(
+        // Application title shown in task switcher
+        title: 'ALU Academic Platform',
+
+        // Theme configuration with ALU branding
+        theme: AppTheme.buildALUTheme(),
+
+        // Main navigation screen with bottom navigation bar
+        home: const MainNavigationScreen(),
+
+        // Remove debug banner in release mode
+        debugShowCheckedModeBanner: false,
+      ),
+    );
+  }
+}
+
+/// Main navigation screen with bottom navigation bar
+///
+/// This widget manages the main navigation structure of the app using
+/// a bottom navigation bar with three tabs: Dashboard, Assignments, and Schedule.
+///
+/// Uses IndexedStack to preserve the state of each screen when switching tabs,
+/// ensuring that user input and scroll positions are maintained.
+class MainNavigationScreen extends StatefulWidget {
+  const MainNavigationScreen({super.key});
+
+  @override
+  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends State<MainNavigationScreen>
+    with SingleTickerProviderStateMixin {
+  // Current selected tab index
+  int _currentIndex = 0;
+
+  // Animation controller for smooth transitions
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _onTabTapped(int index) {
+    if (_currentIndex != index) {
+      setState(() {
+        _currentIndex = index;
+      });
+      // Restart animation for smooth transition
+      _animationController.reset();
+      _animationController.forward();
+    }
+  }
+
+  // List of screens corresponding to each tab
+  // Using IndexedStack preserves state when switching tabs
+  final List<Widget> _screens = const [
+    DashboardScreen(),
+    AssignmentsScreen(),
+    ScheduleScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // Display the current screen based on selected tab
+      // IndexedStack keeps all screens in memory to preserve state
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: IndexedStack(
+          index: _currentIndex,
+          children: _screens,
+        ),
+      ),
+
+      // Bottom navigation bar with three tabs
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Assignments',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Schedule',
+          ),
+        ],
       ),
     );
   }

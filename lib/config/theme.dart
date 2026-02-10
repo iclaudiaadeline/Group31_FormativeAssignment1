@@ -6,18 +6,32 @@ import 'colors.dart';
 /// Provides a comprehensive Material Design theme with ALU branding colors,
 /// typography, and component styling for consistent UI across the app.
 class AppTheme {
+  /// Animation duration constants for consistent timing
+  static const Duration shortAnimation = Duration(milliseconds: 200);
+  static const Duration mediumAnimation = Duration(milliseconds: 300);
+  static const Duration longAnimation = Duration(milliseconds: 500);
+
+  /// Animation curves for smooth transitions
+  static const Curve defaultCurve = Curves.easeInOut;
+  static const Curve bounceCurve = Curves.easeOutBack;
+
   /// Builds the complete ALU theme with Material Design configuration
   static ThemeData buildALUTheme() {
     return ThemeData(
       // Color scheme
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
         surface: AppColors.card,
         error: AppColors.danger,
       ),
+
+      // Splash and ripple effects
+      splashColor: AppColors.secondary.withValues(alpha: 0.3),
+      highlightColor: AppColors.secondary.withValues(alpha: 0.1),
+      splashFactory: InkRipple.splashFactory,
 
       // Typography
       fontFamily: 'Roboto',
@@ -75,12 +89,14 @@ class AppTheme {
       ),
 
       // Card theme
-      cardTheme: CardTheme(
+      cardTheme: const CardThemeData(
         color: AppColors.card,
         elevation: 2,
+        shadowColor: Colors.black26,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.all(Radius.circular(12)),
         ),
+        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
 
       // Button themes
@@ -150,6 +166,24 @@ class AppTheme {
         unselectedItemColor: Colors.white54,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        selectedLabelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.normal,
+        ),
+      ),
+
+      // Page transitions
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
       ),
 
       // Use Material 3

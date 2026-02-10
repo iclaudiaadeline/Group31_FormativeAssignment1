@@ -3,6 +3,7 @@ import '../models/dashboard_summary.dart';
 import '../services/assignment_service.dart';
 import '../services/session_service.dart';
 import '../services/attendance_service.dart';
+import '../utils/error_handler.dart';
 
 /// Provider for managing dashboard state and data aggregation
 ///
@@ -21,9 +22,9 @@ class DashboardProvider extends ChangeNotifier {
     required AssignmentService assignmentService,
     required SessionService sessionService,
     required AttendanceService attendanceService,
-  }) : _assignmentService = assignmentService,
-       _sessionService = sessionService,
-       _attendanceService = attendanceService;
+  })  : _assignmentService = assignmentService,
+        _sessionService = sessionService,
+        _attendanceService = attendanceService;
 
   // Getters
   DashboardSummary? get summary => _summary;
@@ -44,16 +45,16 @@ class DashboardProvider extends ChangeNotifier {
       final todaySessions = await _sessionService.getTodaySessions();
 
       // Get upcoming assignments (next 7 days)
-      final upcomingAssignments = await _assignmentService
-          .getUpcomingAssignments(7);
+      final upcomingAssignments =
+          await _assignmentService.getUpcomingAssignments(7);
 
       // Get attendance percentage
-      final attendancePercentage = await _attendanceService
-          .calculateAttendancePercentage();
+      final attendancePercentage =
+          await _attendanceService.calculateAttendancePercentage();
 
       // Get pending assignments count
-      final pendingCount = await _assignmentService
-          .getPendingAssignmentsCount();
+      final pendingCount =
+          await _assignmentService.getPendingAssignmentsCount();
 
       _summary = DashboardSummary(
         currentDate: currentDate,
@@ -67,7 +68,8 @@ class DashboardProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      _error = 'Failed to load dashboard: ${e.toString()}';
+      final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
+      _error = 'Failed to load dashboard: $errorMessage';
       _isLoading = false;
       notifyListeners();
     }

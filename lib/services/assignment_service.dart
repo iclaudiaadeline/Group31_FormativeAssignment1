@@ -10,7 +10,7 @@ class AssignmentService {
 
   /// Constructor with optional Firestore instance (for testing)
   AssignmentService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Create a new assignment in Firestore
   /// Returns the ID of the created assignment
@@ -35,19 +35,19 @@ class AssignmentService {
           .orderBy('dueDate', descending: false)
           .snapshots()
           .map((snapshot) {
-            return snapshot.docs
-                .map((doc) {
-                  try {
-                    return Assignment.fromFirestore(doc);
-                  } catch (e) {
-                    // Log error and skip corrupted documents
-                    debugPrint('Error parsing assignment ${doc.id}: $e');
-                    return null;
-                  }
-                })
-                .whereType<Assignment>()
-                .toList();
-          });
+        return snapshot.docs
+            .map((doc) {
+              try {
+                return Assignment.fromFirestore(doc);
+              } catch (e) {
+                // Log error and skip corrupted documents
+                debugPrint('Error parsing assignment ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<Assignment>()
+            .toList();
+      });
     } catch (e) {
       // Return empty stream on error
       return Stream.value([]);
@@ -150,16 +150,28 @@ class AssignmentService {
 
   /// Get the count of pending (incomplete) assignments
   /// Returns the number of assignments where isCompleted is false
+  /// Optimized to use count() instead of fetching all documents
   Future<int> getPendingAssignmentsCount() async {
     try {
       final snapshot = await _firestore
           .collection(_collection)
           .where('isCompleted', isEqualTo: false)
+          .count()
           .get();
 
-      return snapshot.docs.length;
+      return snapshot.count ?? 0;
     } catch (e) {
-      throw Exception(FirestoreErrorHandler.getErrorMessage(e));
+      // Fallback to old method if count() is not supported
+      try {
+        final snapshot = await _firestore
+            .collection(_collection)
+            .where('isCompleted', isEqualTo: false)
+            .get();
+
+        return snapshot.docs.length;
+      } catch (fallbackError) {
+        throw Exception(FirestoreErrorHandler.getErrorMessage(fallbackError));
+      }
     }
   }
 

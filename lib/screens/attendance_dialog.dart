@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/session.dart';
 import '../providers/session_provider.dart';
+import '../utils/error_handler.dart';
 
 /// Dialog for recording attendance for a session
 class AttendanceDialog extends StatefulWidget {
@@ -24,9 +25,8 @@ class _AttendanceDialogState extends State<AttendanceDialog> {
 
   /// Format time for display
   String _formatTime(TimeOfDay time) {
-    final hour = time.hour > 12
-        ? time.hour - 12
-        : (time.hour == 0 ? 12 : time.hour);
+    final hour =
+        time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
@@ -65,10 +65,16 @@ class _AttendanceDialogState extends State<AttendanceDialog> {
         _isLoading = false;
       });
       if (mounted) {
+        final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error recording attendance: $e'),
+            content: Text('Error recording attendance: $errorMessage'),
             backgroundColor: const Color(0xFFF44336),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _recordAttendance(status),
+            ),
           ),
         );
       }
@@ -270,9 +276,8 @@ class _AttendanceDialogState extends State<AttendanceDialog> {
             SizedBox(
               width: double.infinity,
               child: TextButton(
-                onPressed: _isLoading
-                    ? null
-                    : () => Navigator.of(context).pop(),
+                onPressed:
+                    _isLoading ? null : () => Navigator.of(context).pop(),
                 child: const Text('Cancel', style: TextStyle(fontSize: 16)),
               ),
             ),
