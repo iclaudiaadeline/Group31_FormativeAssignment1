@@ -75,10 +75,12 @@ class AppTheme {
       ),
 
       // Card theme
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: AppColors.card,
         elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
 
       // Button themes
@@ -91,7 +93,10 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
 
@@ -109,21 +114,26 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.secondary, width: 2),
+          borderSide: const BorderSide(
+            color: AppColors.secondary,
+            width: 2,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.danger, width: 1),
+          borderSide: const BorderSide(
+            color: AppColors.danger,
+            width: 1,
+          ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.danger, width: 2),
+          borderSide: const BorderSide(
+            color: AppColors.danger,
+            width: 2,
+          ),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -151,11 +161,11 @@ class AppTheme {
   static Color getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
       case 'high':
-        return AppColors.danger; // Red
+        return AppColors.danger;
       case 'medium':
-        return Colors.orange; // Orange
+        return Colors.orange;
       case 'low':
-        return Colors.green; // Green
+        return Colors.green;
       default:
         return Colors.grey;
     }

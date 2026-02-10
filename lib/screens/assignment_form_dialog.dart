@@ -127,7 +127,7 @@ class _AssignmentFormDialogState extends State<AssignmentFormDialog> {
 
                 // Priority dropdown
                 DropdownButtonFormField<PriorityLevel>(
-                  initialValue: _selectedPriority,
+                  value: _selectedPriority,
                   decoration: const InputDecoration(
                     labelText: 'Priority',
                     border: OutlineInputBorder(),
