@@ -71,6 +71,12 @@ class DashboardProvider extends ChangeNotifier {
       final errorMessage = FirestoreErrorHandler.getErrorMessage(e);
       _error = 'Failed to load dashboard: $errorMessage';
       _isLoading = false;
+
+      // Log the actual error for debugging
+      if (kDebugMode) {
+        print('Dashboard load error: $e');
+      }
+
       notifyListeners();
     }
   }

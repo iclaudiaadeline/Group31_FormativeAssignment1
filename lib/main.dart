@@ -16,13 +16,14 @@ import 'providers/assignment_provider.dart';
 import 'providers/session_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/connectivity_provider.dart';
+import 'providers/auth_provider.dart';
 import 'services/assignment_service.dart';
 import 'services/session_service.dart';
 import 'services/attendance_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/assignments_screen.dart';
 import 'screens/schedule_screen.dart';
-import 'screens/signup_screen.dart';
+import 'screens/login_screen.dart';
 
 /// Application entry point
 ///
@@ -76,6 +77,10 @@ class MainApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
+        // Authentication provider (must be first)
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(),
+        ),
         // Connectivity monitoring provider
         ChangeNotifierProvider(
           create: (_) => ConnectivityProvider()..initialize(),
@@ -105,8 +110,8 @@ class MainApp extends StatelessWidget {
         // Theme configuration with ALU branding
         theme: AppTheme.buildALUTheme(),
 
-        // Start with signup screen, then navigate to main app
-        home: const SignUpScreen(),
+        // Start with login screen, then navigate to main app
+        home: const AuthWrapper(),
 
         // Remove debug banner in release mode
         debugShowCheckedModeBanner: false,
@@ -272,6 +277,28 @@ class ErrorApp extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Auth wrapper to handle authentication state
+///
+/// Shows login screen if not authenticated, otherwise shows main app
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        // Show main app if authenticated
+        if (authProvider.isAuthenticated) {
+          return const MainNavigationScreen();
+        }
+
+        // Show login screen if not authenticated
+        return const LoginScreen();
+      },
     );
   }
 }

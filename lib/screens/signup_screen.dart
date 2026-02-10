@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/inputs/custom_input_field.dart';
 import '../widgets/buttons/primary_button.dart';
+import '../providers/auth_provider.dart';
 import '../main.dart';
+import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -29,12 +32,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
             email.contains('alustudent.com'));
   }
 
-  void signUp() {
+  void signUp() async {
     final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
 
     if (email.isEmpty || !isUniversityEmail(email)) {
       setState(() {
         errorMessage = "Please use a valid university email";
+      });
+      return;
+    }
+
+    if (password.isEmpty || password.length < 6) {
+      setState(() {
+        errorMessage = "Password must be at least 6 characters";
       });
       return;
     }
@@ -46,11 +57,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
-    // Success → Navigate to Dashboard
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+    // Show loading indicator
+    setState(() {
+      errorMessage = null;
+    });
+
+    // Sign up with Firebase Auth
+    final authProvider = context.read<AuthProvider>();
+    final success = await authProvider.signUp(
+      email: email,
+      password: password,
+      course: selectedCourse!,
     );
+
+    if (success && mounted) {
+      // Success → Navigate to Dashboard
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+      );
+    } else if (mounted) {
+      // Show error from auth provider
+      setState(() {
+        errorMessage = authProvider.error ?? "Sign up failed";
+      });
+    }
   }
 
   @override
@@ -187,12 +218,38 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const SizedBox(height: 24),
 
               /// SIGN UP BUTTON
-              PrimaryButton(
-                text: "Sign Up",
-                onPressed: signUp,
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, _) {
+                  return PrimaryButton(
+                    text: authProvider.isLoading ? "Signing up..." : "Sign Up",
+                    onPressed: authProvider.isLoading ? () {} : signUp,
+                  );
+                },
               ),
 
               const SizedBox(height: 16),
+
+              /// LOGIN LINK
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Already have an account? ",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LoginScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text("Login"),
+                  ),
+                ],
+              ),
 
               /// SKIP FOR NOW (Development only)
               Center(
