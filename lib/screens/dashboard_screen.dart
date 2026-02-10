@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/dashboard_provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/announcement_provider.dart';
+import '../services/auth_service.dart';
 import '../config/colors.dart';
 import '../widgets/attendance_status_widget.dart';
 import '../widgets/session_type_badge.dart';
 import '../widgets/priority_badge.dart';
 import '../widgets/sync_status_indicator.dart';
+import '../main.dart'; // For MainNavigationScreenState
 
 /// Dashboard screen displaying academic overview
 ///
@@ -21,32 +25,121 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _hasLoadedOnce = false;
+  String? _selectedCourse; // Track selected course
+  List<String> _userCourses = []; // User's enrolled courses
 
   @override
   void initState() {
     super.initState();
-    // Load dashboard data on init only if not already loaded
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_hasLoadedOnce) {
-        context.read<DashboardProvider>().loadDashboard();
+    // Load dashboard data and user courses on init
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!_hasLoadedOnce && mounted) {
+        await _loadUserCourses();
+        if (mounted) {
+          context.read<DashboardProvider>().loadDashboard();
+        }
         _hasLoadedOnce = true;
       }
     });
+  }
+
+  Future<void> _loadUserCourses() async {
+    final authService = AuthService();
+    final userData = await authService.getUserData();
+    if (userData != null && userData['courses'] != null) {
+      setState(() {
+        _userCourses = List<String>.from(userData['courses']);
+        // Set first course as default or "All Courses"
+        _selectedCourse = null; // null means "All Courses"
+      });
+    }
   }
 
   Future<void> _handleRefresh() async {
     await context.read<DashboardProvider>().refresh();
   }
 
+  void _navigateToAnnouncements() {
+    // Navigate to announcements tab (index 3)
+    final navigationState =
+        context.findAncestorStateOfType<MainNavigationScreenState>();
+    navigationState?.navigateToTab(3);
+  }
+
+  void _navigateToProfile() {
+    // Navigate to profile tab (index 4)
+    final navigationState =
+        context.findAncestorStateOfType<MainNavigationScreenState>();
+    navigationState?.navigateToTab(4);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final announcementProvider = context.watch<AnnouncementProvider>();
+    final unreadCount = announcementProvider.unreadCount;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('ALU Academic Platform'),
         centerTitle: false,
-        actions: const [
-          SyncStatusIndicator(showText: true),
-          SizedBox(width: 8),
+        actions: [
+          const SyncStatusIndicator(showText: true),
+          const SizedBox(width: 8),
+
+          // Announcements icon with badge
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.campaign),
+                tooltip: 'Announcements',
+                onPressed: _navigateToAnnouncements,
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: AppColors.danger,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      unreadCount > 9 ? '9+' : '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          // Profile icon
+          IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: 'Profile',
+            onPressed: _navigateToProfile,
+          ),
+
+          // Sign out icon
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign Out',
+            onPressed: () async {
+              final authProvider = context.read<AuthProvider>();
+              await authProvider.signOut();
+              // Navigation will be handled automatically by AuthWrapper
+            },
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Consumer<DashboardProvider>(
@@ -99,6 +192,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   // Offline badge banner
                   const OfflineBadge(),
+
+                  // Course Selector Dropdown
+                  if (_userCourses.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String?>(
+                          value: _selectedCourse,
+                          isExpanded: true,
+                          icon: const Icon(Icons.arrow_drop_down,
+                              color: AppColors.secondary),
+                          dropdownColor: AppColors.card,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text('All Selected Courses'),
+                            ),
+                            ..._userCourses.map((course) {
+                              return DropdownMenuItem<String?>(
+                                value: course,
+                                child: Text(course),
+                              );
+                            }),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCourse = value;
+                            });
+                            // Reload dashboard with selected course filter
+                            context
+                                .read<DashboardProvider>()
+                                .loadDashboard(course: value);
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   // Current Date Widget
                   _CurrentDateWidget(date: summary.currentDate),

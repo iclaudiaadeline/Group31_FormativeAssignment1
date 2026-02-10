@@ -4,18 +4,29 @@ import '../services/auth_service.dart';
 
 /// Provider for managing authentication state
 class AuthProvider extends ChangeNotifier {
-  final AuthService _authService = AuthService();
+  final AuthService _authService;
 
   User? _user;
   bool _isLoading = false;
   String? _error;
 
-  AuthProvider() {
+  AuthProvider(this._authService) {
+    // Initialize with current user
+    _user = _authService.currentUser;
+
     // Listen to auth state changes
     _authService.authStateChanges.listen((user) {
+      print('AuthProvider: Auth state changed, user = ${user?.uid ?? "null"}');
       _user = user;
       notifyListeners();
     });
+  }
+
+  /// Initialize auth state listener (called after provider is created)
+  void initialize() {
+    // Ensure we have the latest auth state
+    _user = _authService.currentUser;
+    notifyListeners();
   }
 
   // Getters
@@ -28,7 +39,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signUp({
     required String email,
     required String password,
-    required String course,
+    required List<String> courses, // Changed to List
   }) async {
     _isLoading = true;
     _error = null;
@@ -38,7 +49,7 @@ class AuthProvider extends ChangeNotifier {
       await _authService.signUp(
         email: email,
         password: password,
-        course: course,
+        courses: courses,
       );
       _isLoading = false;
       notifyListeners();
@@ -88,7 +99,21 @@ class AuthProvider extends ChangeNotifier {
 
   /// Sign out
   Future<void> signOut() async {
+    print('AuthProvider: Starting sign out...');
+
+    // First sign out from Firebase
     await _authService.signOut();
+
+    // Then update local state
+    _user = null;
+    print('AuthProvider: User set to null, isAuthenticated = $isAuthenticated');
+
+    // Force notify listeners immediately
+    notifyListeners();
+    print('AuthProvider: Listeners notified');
+
+    // Give the UI a moment to rebuild
+    await Future.delayed(const Duration(milliseconds: 100));
   }
 
   /// Clear error

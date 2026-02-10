@@ -2,12 +2,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/assignment.dart';
 import '../services/assignment_service.dart';
+import '../services/auth_service.dart';
 import '../utils/error_handler.dart';
 
 /// Provider for managing assignment state and operations
 /// Extends ChangeNotifier to notify listeners of state changes
 class AssignmentProvider extends ChangeNotifier {
   final AssignmentService _service;
+  final AuthService _authService;
 
   // State fields
   List<Assignment> _assignments = [];
@@ -20,16 +22,29 @@ class AssignmentProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Constructor with AssignmentService dependency
-  AssignmentProvider({required AssignmentService service}) : _service = service;
+  /// Get current user ID
+  String? get _userId => _authService.currentUser?.uid;
+
+  /// Constructor with AssignmentService and AuthService dependencies
+  AssignmentProvider({
+    required AssignmentService service,
+    required AuthService authService,
+  })  : _service = service,
+        _authService = authService;
 
   /// Initialize the provider and listen to Firestore stream
   /// Should be called when the provider is first created
   void initialize() {
+    final userId = _userId;
+    if (userId == null) {
+      _setError('User not authenticated');
+      return;
+    }
+
     _setLoading(true);
     _setError(null);
 
-    _assignmentsSubscription = _service.getAssignmentsStream().listen(
+    _assignmentsSubscription = _service.getAssignmentsStream(userId).listen(
       (assignments) {
         _assignments = assignments;
         _setLoading(false);
@@ -46,12 +61,19 @@ class AssignmentProvider extends ChangeNotifier {
   /// Create a new assignment
   /// Shows loading state during creation and handles errors
   Future<void> createAssignment(Assignment assignment) async {
+    final userId = _userId;
+    if (userId == null) {
+      _setError('User not authenticated');
+      notifyListeners();
+      throw Exception('User not authenticated');
+    }
+
     _setLoading(true);
     _setError(null);
     notifyListeners();
 
     try {
-      await _service.createAssignment(assignment);
+      await _service.createAssignment(assignment, userId);
       // Stream will automatically update the list
       _setLoading(false);
       // No need to notify here - stream will trigger update

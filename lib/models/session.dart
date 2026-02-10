@@ -11,24 +11,28 @@ enum AttendanceStatus { present, absent }
 class Session {
   final String id;
   final String title;
+  final String course; // Added course field
   final DateTime date;
   final TimeOfDay startTime;
   final TimeOfDay endTime;
   final String location;
   final SessionType type;
   final AttendanceStatus? attendanceStatus;
+  final String userId; // User who owns this session
   final DateTime createdAt;
   final DateTime updatedAt;
 
   Session({
     required this.id,
     required this.title,
+    required this.course, // Added course parameter
     required this.date,
     required this.startTime,
     required this.endTime,
     required this.location,
     required this.type,
     this.attendanceStatus,
+    required this.userId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -40,6 +44,8 @@ class Session {
     return Session(
       id: doc.id,
       title: data['title'] as String,
+      course: data['course'] as String? ??
+          'General', // Added course field with default
       date: (data['date'] as Timestamp).toDate(),
       startTime: _stringToTime(data['startTime'] as String),
       endTime: _stringToTime(data['endTime'] as String),
@@ -48,6 +54,7 @@ class Session {
       attendanceStatus: data['attendanceStatus'] != null
           ? _stringToAttendance(data['attendanceStatus'] as String)
           : null,
+      userId: data['userId'] as String,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
     );
@@ -57,6 +64,7 @@ class Session {
   Map<String, dynamic> toFirestore() {
     return {
       'title': title,
+      'course': course, // Added course field
       'date': Timestamp.fromDate(date),
       'startTime': _timeToString(startTime),
       'endTime': _timeToString(endTime),
@@ -65,6 +73,7 @@ class Session {
       'attendanceStatus': attendanceStatus != null
           ? _attendanceToString(attendanceStatus!)
           : null,
+      'userId': userId,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -74,24 +83,28 @@ class Session {
   Session copyWith({
     String? id,
     String? title,
+    String? course, // Added course parameter
     DateTime? date,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
     String? location,
     SessionType? type,
     AttendanceStatus? attendanceStatus,
+    String? userId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return Session(
       id: id ?? this.id,
       title: title ?? this.title,
+      course: course ?? this.course, // Added course field
       date: date ?? this.date,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,
       type: type ?? this.type,
       attendanceStatus: attendanceStatus ?? this.attendanceStatus,
+      userId: userId ?? this.userId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

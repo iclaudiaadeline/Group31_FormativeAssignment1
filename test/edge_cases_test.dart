@@ -329,6 +329,8 @@ void main() {
   });
 
   group('Edge Cases - Date Calculations', () {
+    const testUserId = 'test-user-123';
+
     test('Assignment due today should be included in upcoming', () {
       final today = DateTime.now();
       final todayNormalized = DateTime(today.year, today.month, today.day);
@@ -338,6 +340,7 @@ void main() {
         course: 'Math',
         dueDate: todayNormalized,
         priority: PriorityLevel.medium,
+        userId: testUserId,
         isCompleted: false,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -360,6 +363,7 @@ void main() {
         course: 'Math',
         dueDate: sevenDaysLater,
         priority: PriorityLevel.medium,
+        userId: testUserId,
         isCompleted: false,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -382,6 +386,7 @@ void main() {
         endTime: const TimeOfDay(hour: 11, minute: 0),
         location: 'Room 101',
         type: SessionType.classSession,
+        userId: testUserId,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -402,6 +407,7 @@ void main() {
         endTime: const TimeOfDay(hour: 11, minute: 0),
         location: 'Room 101',
         type: SessionType.classSession,
+        userId: testUserId,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -411,6 +417,8 @@ void main() {
   });
 
   group('Edge Cases - Attendance Calculations', () {
+    const testUserId = 'test-user-123';
+
     test('Zero sessions should result in 0% attendance', () {
       final sessionsWithAttendance = <Session>[];
       final presentCount = sessionsWithAttendance
@@ -435,6 +443,7 @@ void main() {
           location: 'Room 101',
           type: SessionType.classSession,
           attendanceStatus: AttendanceStatus.present,
+          userId: testUserId,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ),

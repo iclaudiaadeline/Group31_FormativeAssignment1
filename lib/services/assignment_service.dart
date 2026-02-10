@@ -15,11 +15,14 @@ class AssignmentService {
   /// Create a new assignment in Firestore
   /// Returns the ID of the created assignment
   /// Throws an error if creation fails
-  Future<String> createAssignment(Assignment assignment) async {
+  Future<String> createAssignment(Assignment assignment, String userId) async {
     try {
+      // Ensure userId is set
+      final assignmentWithUser = assignment.copyWith(userId: userId);
+
       final docRef = await _firestore
           .collection(_collection)
-          .add(assignment.toFirestore());
+          .add(assignmentWithUser.toFirestore());
       return docRef.id;
     } catch (e) {
       throw Exception(FirestoreErrorHandler.getErrorMessage(e));
@@ -28,10 +31,11 @@ class AssignmentService {
 
   /// Get a real-time stream of all assignments sorted by due date
   /// Returns a stream that emits the updated list whenever data changes
-  Stream<List<Assignment>> getAssignmentsStream() {
+  Stream<List<Assignment>> getAssignmentsStream(String userId) {
     try {
       return _firestore
           .collection(_collection)
+          .where('userId', isEqualTo: userId)
           .orderBy('dueDate', descending: false)
           .snapshots()
           .map((snapshot) {
@@ -120,17 +124,25 @@ class AssignmentService {
 
   /// Get assignments due within the specified number of days
   /// Returns assignments with due dates between now and now + days
-  Future<List<Assignment>> getUpcomingAssignments(int days) async {
+  /// Optional course parameter to filter by specific course
+  Future<List<Assignment>> getUpcomingAssignments(int days, String userId,
+      {String? course}) async {
     try {
       final now = DateTime.now();
       final endDate = now.add(Duration(days: days));
 
-      final snapshot = await _firestore
+      Query query = _firestore
           .collection(_collection)
+          .where('userId', isEqualTo: userId)
           .where('dueDate', isGreaterThanOrEqualTo: Timestamp.fromDate(now))
-          .where('dueDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-          .orderBy('dueDate', descending: false)
-          .get();
+          .where('dueDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+
+      // Add course filter if specified
+      if (course != null) {
+        query = query.where('course', isEqualTo: course);
+      }
+
+      final snapshot = await query.orderBy('dueDate', descending: false).get();
 
       return snapshot.docs
           .map((doc) {
@@ -150,23 +162,38 @@ class AssignmentService {
 
   /// Get the count of pending (incomplete) assignments
   /// Returns the number of assignments where isCompleted is false
+  /// Optional course parameter to filter by specific course
   /// Optimized to use count() instead of fetching all documents
-  Future<int> getPendingAssignmentsCount() async {
+  Future<int> getPendingAssignmentsCount(String userId,
+      {String? course}) async {
     try {
-      final snapshot = await _firestore
+      Query query = _firestore
           .collection(_collection)
-          .where('isCompleted', isEqualTo: false)
-          .count()
-          .get();
+          .where('userId', isEqualTo: userId)
+          .where('isCompleted', isEqualTo: false);
+
+      // Add course filter if specified
+      if (course != null) {
+        query = query.where('course', isEqualTo: course);
+      }
+
+      final snapshot = await query.count().get();
 
       return snapshot.count ?? 0;
     } catch (e) {
       // Fallback to old method if count() is not supported
       try {
-        final snapshot = await _firestore
+        Query query = _firestore
             .collection(_collection)
-            .where('isCompleted', isEqualTo: false)
-            .get();
+            .where('userId', isEqualTo: userId)
+            .where('isCompleted', isEqualTo: false);
+
+        // Add course filter if specified
+        if (course != null) {
+          query = query.where('course', isEqualTo: course);
+        }
+
+        final snapshot = await query.get();
 
         return snapshot.docs.length;
       } catch (fallbackError) {
@@ -177,10 +204,11 @@ class AssignmentService {
 
   /// Get all assignments sorted by due date (helper method)
   /// Returns a list of assignments ordered by due date ascending
-  Future<List<Assignment>> getAssignmentsSortedByDueDate() async {
+  Future<List<Assignment>> getAssignmentsSortedByDueDate(String userId) async {
     try {
       final snapshot = await _firestore
           .collection(_collection)
+          .where('userId', isEqualTo: userId)
           .orderBy('dueDate', descending: false)
           .get();
 

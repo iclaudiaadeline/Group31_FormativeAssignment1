@@ -2,12 +2,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/session.dart';
 import '../services/session_service.dart';
+import '../services/auth_service.dart';
 import '../utils/error_handler.dart';
 
 /// Provider for managing session state and operations
 /// Extends ChangeNotifier to notify listeners of state changes
 class SessionProvider extends ChangeNotifier {
   final SessionService _service;
+  final AuthService _authService;
 
   // State fields
   List<Session> _sessions = [];
@@ -20,16 +22,29 @@ class SessionProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Constructor with SessionService dependency
-  SessionProvider({required SessionService service}) : _service = service;
+  /// Get current user ID
+  String? get _userId => _authService.currentUser?.uid;
+
+  /// Constructor with SessionService and AuthService dependencies
+  SessionProvider({
+    required SessionService service,
+    required AuthService authService,
+  })  : _service = service,
+        _authService = authService;
 
   /// Initialize the provider and listen to Firestore stream
   /// Should be called when the provider is first created
   void initialize() {
+    final userId = _userId;
+    if (userId == null) {
+      _setError('User not authenticated');
+      return;
+    }
+
     _setLoading(true);
     _setError(null);
 
-    _sessionsSubscription = _service.getSessionsStream().listen(
+    _sessionsSubscription = _service.getSessionsStream(userId).listen(
       (sessions) {
         _sessions = sessions;
         _setLoading(false);
@@ -46,12 +61,19 @@ class SessionProvider extends ChangeNotifier {
   /// Create a new session
   /// Shows loading state during creation and handles errors
   Future<void> createSession(Session session) async {
+    final userId = _userId;
+    if (userId == null) {
+      _setError('User not authenticated');
+      notifyListeners();
+      throw Exception('User not authenticated');
+    }
+
     _setLoading(true);
     _setError(null);
     notifyListeners();
 
     try {
-      await _service.createSession(session);
+      await _service.createSession(session, userId);
       // Stream will automatically update the list
       _setLoading(false);
       // No need to notify here - stream will trigger update

@@ -133,6 +133,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'addAssignmentFAB',
         onPressed: () => _showAssignmentForm(context),
         tooltip: 'Add Assignment',
         child: const Icon(Icons.add),

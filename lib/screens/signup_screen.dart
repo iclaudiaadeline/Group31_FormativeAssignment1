@@ -16,13 +16,16 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String? selectedCourse;
+  Set<String> selectedCourses = {}; // Changed to Set for multiple selection
   String? errorMessage;
 
   final List<String> courses = [
     "Mobile App Development (Flutter)",
     "Introduction to Linux",
     "Web Development",
+    "Data Structures and Algorithms",
+    "Database Management Systems",
+    "Software Engineering",
   ];
 
   bool isUniversityEmail(String email) {
@@ -50,9 +53,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
-    if (selectedCourse == null) {
+    if (selectedCourses.isEmpty) {
       setState(() {
-        errorMessage = "Please select a course";
+        errorMessage = "Please select at least one course";
       });
       return;
     }
@@ -67,7 +70,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final success = await authProvider.signUp(
       email: email,
       password: password,
-      course: selectedCourse!,
+      courses: selectedCourses.toList(), // Pass list of courses
     );
 
     if (success && mounted) {
@@ -133,7 +136,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const SizedBox(height: 24),
 
               const Text(
-                "Select Course",
+                "Select Courses (one or more)",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -141,13 +144,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 12),
 
-              /// COURSES
+              /// COURSES - Multiple selection
               ...courses.map((course) {
-                final isSelected = selectedCourse == course;
+                final isSelected = selectedCourses.contains(course);
                 return GestureDetector(
                   onTap: () {
                     setState(() {
-                      selectedCourse = course;
+                      if (isSelected) {
+                        selectedCourses.remove(course);
+                      } else {
+                        selectedCourses.add(course);
+                      }
                       errorMessage = null;
                     });
                   },
@@ -170,8 +177,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       children: [
                         Icon(
                           isSelected
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
                           color: isSelected ? Colors.white : Colors.grey,
                         ),
                         const SizedBox(width: 12),

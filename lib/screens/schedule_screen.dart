@@ -280,6 +280,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'addSessionFAB',
         onPressed: () => _showAddSessionDialog(context),
         tooltip: 'Add session',
         child: const Icon(Icons.add),

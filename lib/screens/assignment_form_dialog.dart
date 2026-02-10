@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/assignment.dart';
 import '../models/assignment_validator.dart';
 import '../providers/assignment_provider.dart';
@@ -19,28 +20,58 @@ class AssignmentFormDialog extends StatefulWidget {
 class _AssignmentFormDialogState extends State<AssignmentFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _courseController = TextEditingController();
 
+  String? _selectedCourse; // Changed to dropdown selection
+  List<String> _userCourses = []; // User's enrolled courses
   DateTime? _selectedDueDate;
   PriorityLevel _selectedPriority = PriorityLevel.medium;
   bool _isSubmitting = false;
+  bool _isLoadingCourses = true;
 
   @override
   void initState() {
     super.initState();
+    _loadUserCourses();
+
     // Pre-fill form if editing existing assignment
     if (widget.assignment != null) {
       _titleController.text = widget.assignment!.title;
-      _courseController.text = widget.assignment!.course;
+      _selectedCourse = widget.assignment!.course;
       _selectedDueDate = widget.assignment!.dueDate;
       _selectedPriority = widget.assignment!.priority;
+    }
+  }
+
+  Future<void> _loadUserCourses() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists && userDoc.data()?['courses'] != null) {
+          setState(() {
+            _userCourses = List<String>.from(userDoc.data()!['courses']);
+            _isLoadingCourses = false;
+          });
+        } else {
+          setState(() {
+            _isLoadingCourses = false;
+          });
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingCourses = false;
+      });
     }
   }
 
   @override
   void dispose() {
     _titleController.dispose();
-    _courseController.dispose();
     super.dispose();
   }
 
@@ -81,20 +112,41 @@ class _AssignmentFormDialogState extends State<AssignmentFormDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // Course field
-                TextFormField(
-                  controller: _courseController,
-                  decoration: const InputDecoration(
-                    labelText: 'Course',
-                    hintText: 'Enter course name',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.book),
+                // Course dropdown
+                if (_isLoadingCourses)
+                  const Center(child: CircularProgressIndicator())
+                else if (_userCourses.isEmpty)
+                  const Text(
+                    'No courses found. Please add courses in your profile.',
+                    style: TextStyle(color: Colors.orange),
+                  )
+                else
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedCourse,
+                    decoration: const InputDecoration(
+                      labelText: 'Course',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.book),
+                    ),
+                    hint: const Text('Select course'),
+                    items: _userCourses.map((course) {
+                      return DropdownMenuItem(
+                        value: course,
+                        child: Text(course),
+                      );
+                    }).toList(),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select a course';
+                      }
+                      return null;
+                    },
+                    onChanged: _isSubmitting
+                        ? null
+                        : (value) {
+                            setState(() => _selectedCourse = value);
+                          },
                   ),
-                  validator: (value) =>
-                      AssignmentValidator.validateCourse(value),
-                  textCapitalization: TextCapitalization.words,
-                  maxLength: 50,
-                ),
                 const SizedBox(height: 16),
 
                 // Due date picker
@@ -234,7 +286,7 @@ class _AssignmentFormDialogState extends State<AssignmentFormDialog> {
         // Update existing assignment
         final updatedAssignment = widget.assignment!.copyWith(
           title: _titleController.text.trim(),
-          course: _courseController.text.trim(),
+          course: _selectedCourse!,
           dueDate: _selectedDueDate,
           priority: _selectedPriority,
           updatedAt: now,
@@ -269,7 +321,7 @@ class _AssignmentFormDialogState extends State<AssignmentFormDialog> {
         final newAssignment = Assignment(
           id: '', // Will be generated by Firestore
           title: _titleController.text.trim(),
-          course: _courseController.text.trim(),
+          course: _selectedCourse!,
           dueDate: _selectedDueDate!,
           priority: _selectedPriority,
           isCompleted: false,

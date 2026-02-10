@@ -1,1 +1,34 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"group31-formative-assignment1","appId":"1:593104511265:android:2f9249398fdc612a44de60","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"group31-formative-assignment1","configurations":{"android":"1:593104511265:android:2f9249398fdc612a44de60","ios":"1:593104511265:ios:ec5b93e61d42361944de60","web":"1:593104511265:web:4a5f0d18921f552244de60"}}},"ios":{"default":{"projectId":"group31-formative-assignment1","appId":"1:593104511265:ios:ec5b93e61d42361944de60","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "group31-formative-assignment1",
+          "appId": "1:593104511265:android:2f9249398fdc612a44de60",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "group31-formative-assignment1",
+          "configurations": {
+            "android": "1:593104511265:android:2f9249398fdc612a44de60",
+            "ios": "1:593104511265:ios:ec5b93e61d42361944de60",
+            "web": "1:593104511265:web:4a5f0d18921f552244de60"
+          }
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "group31-formative-assignment1",
+          "appId": "1:593104511265:ios:ec5b93e61d42361944de60",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      }
+    }
+  }
+}

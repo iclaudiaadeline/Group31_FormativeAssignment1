@@ -10,16 +10,19 @@ class SessionService {
 
   /// Constructor with optional Firestore instance (for testing)
   SessionService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Create a new session in Firestore
   /// Returns the ID of the created session
   /// Throws an error if creation fails
-  Future<String> createSession(Session session) async {
+  Future<String> createSession(Session session, String userId) async {
     try {
+      // Ensure userId is set
+      final sessionWithUser = session.copyWith(userId: userId);
+
       final docRef = await _firestore
           .collection(_collection)
-          .add(session.toFirestore());
+          .add(sessionWithUser.toFirestore());
       return docRef.id;
     } catch (e) {
       throw Exception(FirestoreErrorHandler.getErrorMessage(e));
@@ -28,27 +31,28 @@ class SessionService {
 
   /// Get a real-time stream of all sessions sorted by date and start time
   /// Returns a stream that emits the updated list whenever data changes
-  Stream<List<Session>> getSessionsStream() {
+  Stream<List<Session>> getSessionsStream(String userId) {
     try {
       return _firestore
           .collection(_collection)
+          .where('userId', isEqualTo: userId)
           .orderBy('date', descending: false)
           .orderBy('startTime', descending: false)
           .snapshots()
           .map((snapshot) {
-            return snapshot.docs
-                .map((doc) {
-                  try {
-                    return Session.fromFirestore(doc);
-                  } catch (e) {
-                    // Log error and skip corrupted documents
-                    debugPrint('Error parsing session ${doc.id}: $e');
-                    return null;
-                  }
-                })
-                .whereType<Session>()
-                .toList();
-          });
+        return snapshot.docs
+            .map((doc) {
+              try {
+                return Session.fromFirestore(doc);
+              } catch (e) {
+                // Log error and skip corrupted documents
+                debugPrint('Error parsing session ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<Session>()
+            .toList();
+      });
     } catch (e) {
       // Return empty stream on error
       return Stream.value([]);
@@ -121,16 +125,26 @@ class SessionService {
 
   /// Get sessions for a specific date
   /// Returns all sessions scheduled on the given date
-  Future<List<Session>> getSessionsForDate(DateTime date) async {
+  /// Optional course parameter to filter by specific course
+  Future<List<Session>> getSessionsForDate(DateTime date, String userId,
+      {String? course}) async {
     try {
       // Normalize date to start of day
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
-      final snapshot = await _firestore
+      Query query = _firestore
           .collection(_collection)
+          .where('userId', isEqualTo: userId)
           .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .where('date', isLessThan: Timestamp.fromDate(endOfDay))
+          .where('date', isLessThan: Timestamp.fromDate(endOfDay));
+
+      // Add course filter if specified
+      if (course != null) {
+        query = query.where('course', isEqualTo: course);
+      }
+
+      final snapshot = await query
           .orderBy('date', descending: false)
           .orderBy('startTime', descending: false)
           .get();
@@ -153,7 +167,8 @@ class SessionService {
 
   /// Get sessions for a specific week
   /// Returns all sessions between weekStart (inclusive) and weekStart + 7 days (exclusive)
-  Future<List<Session>> getSessionsForWeek(DateTime weekStart) async {
+  Future<List<Session>> getSessionsForWeek(
+      DateTime weekStart, String userId) async {
     try {
       // Normalize to start of day
       final startOfWeek = DateTime(
@@ -165,6 +180,7 @@ class SessionService {
 
       final snapshot = await _firestore
           .collection(_collection)
+          .where('userId', isEqualTo: userId)
           .where(
             'date',
             isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek),
@@ -192,10 +208,12 @@ class SessionService {
 
   /// Get all sessions scheduled for today
   /// Returns sessions where the date matches the current date
-  Future<List<Session>> getTodaySessions() async {
+  /// Optional course parameter to filter by specific course
+  Future<List<Session>> getTodaySessions(String userId,
+      {String? course}) async {
     try {
       final now = DateTime.now();
-      return await getSessionsForDate(now);
+      return await getSessionsForDate(now, userId, course: course);
     } catch (e) {
       throw Exception(FirestoreErrorHandler.getErrorMessage(e));
     }

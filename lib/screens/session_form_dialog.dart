@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/session.dart';
 import '../models/session_validator.dart';
 import '../providers/session_provider.dart';
+import '../providers/auth_provider.dart';
 import '../utils/error_handler.dart';
 
 /// Dialog for creating or editing a session
@@ -21,12 +23,15 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
 
+  String? _selectedCourse; // Added course selection
+  List<String> _userCourses = []; // User's enrolled courses
   DateTime? _selectedDate;
   TimeOfDay? _selectedStartTime;
   TimeOfDay? _selectedEndTime;
   SessionType _selectedType = SessionType.classSession;
 
   bool _isLoading = false;
+  bool _isLoadingCourses = true;
   String? _dateError;
   String? _startTimeError;
   String? _endTimeError;
@@ -35,14 +40,46 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
   @override
   void initState() {
     super.initState();
+    _loadUserCourses();
+
     // If editing, populate fields with existing session data
     if (widget.session != null) {
       _titleController.text = widget.session!.title;
+      _selectedCourse = widget.session!.course;
       _locationController.text = widget.session!.location;
       _selectedDate = widget.session!.date;
       _selectedStartTime = widget.session!.startTime;
       _selectedEndTime = widget.session!.endTime;
       _selectedType = widget.session!.type;
+    }
+  }
+
+  Future<void> _loadUserCourses() async {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final user = authProvider.user;
+
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists && userDoc.data()?['courses'] != null) {
+          setState(() {
+            _userCourses = List<String>.from(userDoc.data()!['courses']);
+            _isLoadingCourses = false;
+          });
+        } else {
+          setState(() {
+            _isLoadingCourses = false;
+          });
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingCourses = false;
+      });
     }
   }
 
@@ -175,17 +212,21 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
 
     try {
       final provider = context.read<SessionProvider>();
+      final authProvider = context.read<AuthProvider>();
+      final userId = authProvider.user?.uid ?? '';
       final now = DateTime.now();
 
       final session = Session(
         id: widget.session?.id ?? '',
         title: _titleController.text.trim(),
+        course: _selectedCourse!, // Added course field
         date: _selectedDate!,
         startTime: _selectedStartTime!,
         endTime: _selectedEndTime!,
         location: _locationController.text.trim(),
         type: _selectedType,
         attendanceStatus: widget.session?.attendanceStatus,
+        userId: widget.session?.userId ?? userId,
         createdAt: widget.session?.createdAt ?? now,
         updatedAt: now,
       );
@@ -268,6 +309,43 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
                   validator: SessionValidator.validateTitle,
                   enabled: !_isLoading,
                 ),
+                const SizedBox(height: 16),
+
+                // Course dropdown
+                if (_isLoadingCourses)
+                  const Center(child: CircularProgressIndicator())
+                else if (_userCourses.isEmpty)
+                  const Text(
+                    'No courses found. Please add courses in your profile.',
+                    style: TextStyle(color: Colors.orange),
+                  )
+                else
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedCourse,
+                    decoration: const InputDecoration(
+                      labelText: 'Course',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.book),
+                    ),
+                    hint: const Text('Select course'),
+                    items: _userCourses.map((course) {
+                      return DropdownMenuItem(
+                        value: course,
+                        child: Text(course),
+                      );
+                    }).toList(),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select a course';
+                      }
+                      return null;
+                    },
+                    onChanged: _isLoading
+                        ? null
+                        : (value) {
+                            setState(() => _selectedCourse = value);
+                          },
+                  ),
                 const SizedBox(height: 16),
 
                 // Date Field

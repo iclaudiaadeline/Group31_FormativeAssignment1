@@ -10,14 +10,14 @@ class AttendanceService {
 
   /// Constructor with optional Firestore instance (for testing)
   AttendanceService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Calculate attendance percentage
   /// Returns (Present sessions / Total sessions with attendance) × 100
   /// Returns 0.0 if no sessions have recorded attendance
-  Future<double> calculateAttendancePercentage() async {
+  Future<double> calculateAttendancePercentage(String userId) async {
     try {
-      final sessionsWithAttendance = await getSessionsWithAttendance();
+      final sessionsWithAttendance = await getSessionsWithAttendance(userId);
 
       if (sessionsWithAttendance.isEmpty) {
         return 0.0;
@@ -40,9 +40,9 @@ class AttendanceService {
 
   /// Get attendance statistics
   /// Returns a map with 'present', 'absent', and 'total' counts
-  Future<Map<String, int>> getAttendanceStats() async {
+  Future<Map<String, int>> getAttendanceStats(String userId) async {
     try {
-      final sessionsWithAttendance = await getSessionsWithAttendance();
+      final sessionsWithAttendance = await getSessionsWithAttendance(userId);
 
       final presentCount = sessionsWithAttendance
           .where(
@@ -68,10 +68,11 @@ class AttendanceService {
 
   /// Get all sessions with recorded attendance
   /// Returns sessions where attendanceStatus is not null
-  Future<List<Session>> getSessionsWithAttendance() async {
+  Future<List<Session>> getSessionsWithAttendance(String userId) async {
     try {
       final snapshot = await _firestore
           .collection(_collection)
+          .where('userId', isEqualTo: userId)
           .where('attendanceStatus', isNotEqualTo: null)
           .get();
 
@@ -94,9 +95,9 @@ class AttendanceService {
 
   /// Check if attendance percentage is below the 75% threshold
   /// Returns true if attendance is below 75%, false otherwise
-  Future<bool> isAttendanceBelowThreshold() async {
+  Future<bool> isAttendanceBelowThreshold(String userId) async {
     try {
-      final percentage = await calculateAttendancePercentage();
+      final percentage = await calculateAttendancePercentage(userId);
       return percentage < 75.0;
     } catch (e) {
       throw Exception(FirestoreErrorHandler.getErrorMessage(e));

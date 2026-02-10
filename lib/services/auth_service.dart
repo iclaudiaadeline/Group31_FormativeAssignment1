@@ -16,7 +16,7 @@ class AuthService {
   Future<UserCredential> signUp({
     required String email,
     required String password,
-    required String course,
+    required List<String> courses, // Changed to List
   }) async {
     try {
       // Create user account
@@ -29,7 +29,7 @@ class AuthService {
       if (userCredential.user != null) {
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'email': email,
-          'course': course,
+          'courses': courses, // Store as array
           'createdAt': FieldValue.serverTimestamp(),
         });
       }

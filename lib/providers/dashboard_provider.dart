@@ -3,6 +3,7 @@ import '../models/dashboard_summary.dart';
 import '../services/assignment_service.dart';
 import '../services/session_service.dart';
 import '../services/attendance_service.dart';
+import '../services/auth_service.dart';
 import '../utils/error_handler.dart';
 
 /// Provider for managing dashboard state and data aggregation
@@ -13,18 +14,24 @@ class DashboardProvider extends ChangeNotifier {
   final AssignmentService _assignmentService;
   final SessionService _sessionService;
   final AttendanceService _attendanceService;
+  final AuthService _authService;
 
   DashboardSummary? _summary;
   bool _isLoading = false;
   String? _error;
 
+  /// Get current user ID
+  String? get _userId => _authService.currentUser?.uid;
+
   DashboardProvider({
     required AssignmentService assignmentService,
     required SessionService sessionService,
     required AttendanceService attendanceService,
+    required AuthService authService,
   })  : _assignmentService = assignmentService,
         _sessionService = sessionService,
-        _attendanceService = attendanceService;
+        _attendanceService = attendanceService,
+        _authService = authService;
 
   // Getters
   DashboardSummary? get summary => _summary;
@@ -32,7 +39,15 @@ class DashboardProvider extends ChangeNotifier {
   String? get error => _error;
 
   /// Load dashboard data by aggregating from all services
-  Future<void> loadDashboard() async {
+  /// Optional course parameter to filter data by specific course
+  Future<void> loadDashboard({String? course}) async {
+    final userId = _userId;
+    if (userId == null) {
+      _error = 'User not authenticated';
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -41,20 +56,21 @@ class DashboardProvider extends ChangeNotifier {
       final currentDate = DateTime.now();
       final academicWeek = calculateAcademicWeek(currentDate);
 
-      // Get today's sessions
-      final todaySessions = await _sessionService.getTodaySessions();
+      // Get today's sessions (filtered by course if specified)
+      final todaySessions =
+          await _sessionService.getTodaySessions(userId, course: course);
 
-      // Get upcoming assignments (next 7 days)
-      final upcomingAssignments =
-          await _assignmentService.getUpcomingAssignments(7);
+      // Get upcoming assignments (next 7 days, filtered by course if specified)
+      final upcomingAssignments = await _assignmentService
+          .getUpcomingAssignments(7, userId, course: course);
 
-      // Get attendance percentage
+      // Get attendance percentage (always show all courses for attendance)
       final attendancePercentage =
-          await _attendanceService.calculateAttendancePercentage();
+          await _attendanceService.calculateAttendancePercentage(userId);
 
-      // Get pending assignments count
-      final pendingCount =
-          await _assignmentService.getPendingAssignmentsCount();
+      // Get pending assignments count (filtered by course if specified)
+      final pendingCount = await _assignmentService
+          .getPendingAssignmentsCount(userId, course: course);
 
       _summary = DashboardSummary(
         currentDate: currentDate,

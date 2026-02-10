@@ -8,6 +8,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart' show User, FirebaseAuth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
@@ -17,12 +18,17 @@ import 'providers/session_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/announcement_provider.dart';
 import 'services/assignment_service.dart';
 import 'services/session_service.dart';
 import 'services/attendance_service.dart';
+import 'services/auth_service.dart';
+import 'services/announcement_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/assignments_screen.dart';
 import 'screens/schedule_screen.dart';
+import 'screens/announcements_screen.dart';
+import 'screens/profile_screen.dart';
 import 'screens/login_screen.dart';
 
 /// Application entry point
@@ -70,16 +76,14 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize services
-    final assignmentService = AssignmentService();
-    final sessionService = SessionService();
-    final attendanceService = AttendanceService();
+    // Initialize services - use single instances
+    final authService = AuthService();
 
     return MultiProvider(
       providers: [
         // Authentication provider (must be first)
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(),
+          create: (_) => AuthProvider(authService)..initialize(),
         ),
         // Connectivity monitoring provider
         ChangeNotifierProvider(
@@ -87,20 +91,33 @@ class MainApp extends StatelessWidget {
         ),
         // Assignment management provider
         ChangeNotifierProvider(
-          create: (_) =>
-              AssignmentProvider(service: assignmentService)..initialize(),
+          create: (_) => AssignmentProvider(
+            service: AssignmentService(),
+            authService: authService,
+          )..initialize(),
         ),
         // Session scheduling provider
         ChangeNotifierProvider(
-          create: (_) => SessionProvider(service: sessionService)..initialize(),
+          create: (_) => SessionProvider(
+            service: SessionService(),
+            authService: authService,
+          )..initialize(),
         ),
         // Dashboard aggregation provider
         ChangeNotifierProvider(
           create: (_) => DashboardProvider(
-            assignmentService: assignmentService,
-            sessionService: sessionService,
-            attendanceService: attendanceService,
+            assignmentService: AssignmentService(),
+            sessionService: SessionService(),
+            attendanceService: AttendanceService(),
+            authService: authService,
           )..loadDashboard(),
+        ),
+        // Announcement provider
+        ChangeNotifierProvider(
+          create: (_) => AnnouncementProvider(
+            service: AnnouncementService(),
+            authService: authService,
+          )..initialize(),
         ),
       ],
       child: MaterialApp(
@@ -123,7 +140,7 @@ class MainApp extends StatelessWidget {
 /// Main navigation screen with bottom navigation bar
 ///
 /// This widget manages the main navigation structure of the app using
-/// a bottom navigation bar with three tabs: Dashboard, Assignments, and Schedule.
+/// a bottom navigation bar with five tabs: Dashboard, Assignments, Schedule, Announcements, and Profile.
 ///
 /// Uses IndexedStack to preserve the state of each screen when switching tabs,
 /// ensuring that user input and scroll positions are maintained.
@@ -131,10 +148,10 @@ class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
   @override
-  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+  State<MainNavigationScreen> createState() => MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen>
+class MainNavigationScreenState extends State<MainNavigationScreen>
     with SingleTickerProviderStateMixin {
   // Current selected tab index
   int _currentIndex = 0;
@@ -176,12 +193,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     }
   }
 
+  // Public method to navigate to a specific tab from child screens
+  void navigateToTab(int index) {
+    _onTabTapped(index);
+  }
+
   // List of screens corresponding to each tab
   // Using IndexedStack preserves state when switching tabs
   final List<Widget> _screens = const [
     DashboardScreen(),
     AssignmentsScreen(),
     ScheduleScreen(),
+    AnnouncementsScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -197,10 +221,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         ),
       ),
 
-      // Bottom navigation bar with three tabs
+      // Bottom navigation bar with five tabs
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
+        type: BottomNavigationBarType.fixed, // Required for more than 3 items
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
@@ -213,6 +238,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
             label: 'Schedule',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.campaign),
+            label: 'Announcements',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),
@@ -289,10 +322,23 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        print(
+            'AuthWrapper: StreamBuilder building, hasData = ${snapshot.hasData}, user = ${snapshot.data?.uid ?? "null"}');
+
+        // Show loading while checking auth state
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
         // Show main app if authenticated
-        if (authProvider.isAuthenticated) {
+        if (snapshot.hasData && snapshot.data != null) {
           return const MainNavigationScreen();
         }
 
