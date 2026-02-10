@@ -141,7 +141,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: () async {
               final authProvider = context.read<AuthProvider>();
               await authProvider.signOut();
-              // Navigation will be handled automatically by AuthWrapper
             },
           ),
           const SizedBox(width: 8),

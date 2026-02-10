@@ -8,7 +8,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart' show User, FirebaseAuth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
@@ -118,18 +117,24 @@ class MainApp extends StatelessWidget {
           )..initialize(),
         ),
       ],
-      child: MaterialApp(
-        // Application title shown in task switcher
-        title: 'ALU Academic Platform',
+      child: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          return MaterialApp(
+            // Application title shown in task switcher
+            title: 'ALU Academic Platform',
 
-        // Theme configuration with ALU branding
-        theme: AppTheme.buildALUTheme(),
+            // Theme configuration with ALU branding
+            theme: AppTheme.buildALUTheme(),
 
-        // Start with login screen, then navigate to main app
-        home: const AuthWrapper(),
+            // Use home instead of routes for simpler auth flow
+            home: authProvider.isAuthenticated
+                ? const MainNavigationScreen()
+                : const LoginScreen(),
 
-        // Remove debug banner in release mode
-        debugShowCheckedModeBanner: false,
+            // Remove debug banner in release mode
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
     );
   }
@@ -298,41 +303,6 @@ class ErrorApp extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Auth wrapper to handle authentication state
-///
-/// Shows login screen if not authenticated, otherwise shows main app
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        print(
-            'AuthWrapper: StreamBuilder building, hasData = ${snapshot.hasData}, user = ${snapshot.data?.uid ?? "null"}');
-
-        // Show loading while checking auth state
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
-        // Show main app if authenticated
-        if (snapshot.hasData && snapshot.data != null) {
-          return const MainNavigationScreen();
-        }
-
-        // Show login screen if not authenticated
-        return const LoginScreen();
-      },
     );
   }
 }
