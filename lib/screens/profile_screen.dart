@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
-import '../services/auth_service.dart';
 import '../config/colors.dart';
 
 /// Profile screen displaying user information and risk status
@@ -63,9 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            // Navigate back or to dashboard
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Your Risk Status',

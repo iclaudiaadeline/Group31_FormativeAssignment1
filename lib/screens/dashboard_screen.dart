@@ -10,7 +10,8 @@ import '../widgets/attendance_status_widget.dart';
 import '../widgets/session_type_badge.dart';
 import '../widgets/priority_badge.dart';
 import '../widgets/sync_status_indicator.dart';
-import '../main.dart'; // For MainNavigationScreenState
+import 'announcements_screen.dart';
+import 'profile_screen.dart';
 
 /// Dashboard screen displaying academic overview
 ///
@@ -60,17 +61,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _navigateToAnnouncements() {
-    // Navigate to announcements tab (index 3)
-    final navigationState =
-        context.findAncestorStateOfType<MainNavigationScreenState>();
-    navigationState?.navigateToTab(3);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AnnouncementsScreen(),
+      ),
+    );
   }
 
   void _navigateToProfile() {
-    // Navigate to profile tab (index 4)
-    final navigationState =
-        context.findAncestorStateOfType<MainNavigationScreenState>();
-    navigationState?.navigateToTab(4);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProfileScreen(),
+      ),
+    );
   }
 
   @override

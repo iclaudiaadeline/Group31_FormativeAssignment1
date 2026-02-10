@@ -25,6 +25,19 @@ class Announcement {
   /// Create Announcement from Firestore document
   factory Announcement.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+
+    // Handle priority field - convert to string if it's not already
+    String priorityValue = 'medium';
+    if (data['priority'] != null) {
+      final priority = data['priority'];
+      if (priority is String) {
+        priorityValue = priority;
+      } else {
+        // Handle case where priority might be stored as enum or other type
+        priorityValue = priority.toString().toLowerCase();
+      }
+    }
+
     return Announcement(
       id: doc.id,
       userId: data['userId'] ?? '',
@@ -34,7 +47,7 @@ class Announcement {
       expiresAt: data['expiresAt'] != null
           ? (data['expiresAt'] as Timestamp).toDate()
           : null,
-      priority: data['priority'] ?? 'medium',
+      priority: priorityValue,
       isRead: data['isRead'] ?? false,
     );
   }

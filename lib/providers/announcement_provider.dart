@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/announcement.dart';
 import '../services/announcement_service.dart';
@@ -14,6 +15,7 @@ class AnnouncementProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   int _unreadCount = 0;
+  StreamSubscription<List<Announcement>>? _announcementSubscription;
 
   AnnouncementProvider({
     required AnnouncementService service,
@@ -48,7 +50,10 @@ class AnnouncementProvider extends ChangeNotifier {
     // Generate dynamic announcements first
     _generateDynamicAnnouncements();
 
-    _service.getAnnouncementsStream(userId).listen(
+    // Cancel existing subscription if any
+    _announcementSubscription?.cancel();
+
+    _announcementSubscription = _service.getAnnouncementsStream(userId).listen(
       (announcements) {
         _announcements = announcements;
         _isLoading = false;
@@ -62,6 +67,12 @@ class AnnouncementProvider extends ChangeNotifier {
         notifyListeners();
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _announcementSubscription?.cancel();
+    super.dispose();
   }
 
   /// Generate dynamic announcements based on sessions and assignments

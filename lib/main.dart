@@ -27,8 +27,6 @@ import 'services/announcement_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/assignments_screen.dart';
 import 'screens/schedule_screen.dart';
-import 'screens/announcements_screen.dart';
-import 'screens/profile_screen.dart';
 import 'screens/login_screen.dart';
 
 /// Application entry point
@@ -204,8 +202,6 @@ class MainNavigationScreenState extends State<MainNavigationScreen>
     DashboardScreen(),
     AssignmentsScreen(),
     ScheduleScreen(),
-    AnnouncementsScreen(),
-    ProfileScreen(),
   ];
 
   @override
@@ -221,11 +217,11 @@ class MainNavigationScreenState extends State<MainNavigationScreen>
         ),
       ),
 
-      // Bottom navigation bar with five tabs
+      // Bottom navigation bar with three tabs
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
-        type: BottomNavigationBarType.fixed, // Required for more than 3 items
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
@@ -238,14 +234,6 @@ class MainNavigationScreenState extends State<MainNavigationScreen>
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
             label: 'Schedule',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.campaign),
-            label: 'Announcements',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
           ),
         ],
       ),
