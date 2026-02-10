@@ -22,6 +22,7 @@ import 'services/attendance_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/assignments_screen.dart';
 import 'screens/schedule_screen.dart';
+import 'screens/signup_screen.dart';
 
 /// Application entry point
 ///
@@ -104,8 +105,8 @@ class MainApp extends StatelessWidget {
         // Theme configuration with ALU branding
         theme: AppTheme.buildALUTheme(),
 
-        // Main navigation screen with bottom navigation bar
-        home: const MainNavigationScreen(),
+        // Start with signup screen, then navigate to main app
+        home: const SignUpScreen(),
 
         // Remove debug banner in release mode
         debugShowCheckedModeBanner: false,
