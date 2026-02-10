@@ -11,6 +11,7 @@ class Assignment {
   final DateTime dueDate;
   final PriorityLevel priority;
   final bool isCompleted;
+  final String userId; // User who owns this assignment
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -21,6 +22,7 @@ class Assignment {
     required this.dueDate,
     required this.priority,
     this.isCompleted = false,
+    required this.userId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -36,6 +38,7 @@ class Assignment {
       dueDate: (data['dueDate'] as Timestamp).toDate(),
       priority: _stringToPriority(data['priority'] as String),
       isCompleted: data['isCompleted'] as bool? ?? false,
+      userId: data['userId'] as String,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
     );
@@ -49,6 +52,7 @@ class Assignment {
       'dueDate': Timestamp.fromDate(dueDate),
       'priority': _priorityToString(priority),
       'isCompleted': isCompleted,
+      'userId': userId,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -62,6 +66,7 @@ class Assignment {
     DateTime? dueDate,
     PriorityLevel? priority,
     bool? isCompleted,
+    String? userId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -72,6 +77,7 @@ class Assignment {
       dueDate: dueDate ?? this.dueDate,
       priority: priority ?? this.priority,
       isCompleted: isCompleted ?? this.isCompleted,
+      userId: userId ?? this.userId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -98,6 +104,7 @@ class Assignment {
         other.dueDate == dueDate &&
         other.priority == priority &&
         other.isCompleted == isCompleted &&
+        other.userId == userId &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
   }
@@ -111,6 +118,7 @@ class Assignment {
       dueDate,
       priority,
       isCompleted,
+      userId,
       createdAt,
       updatedAt,
     );
@@ -119,6 +127,6 @@ class Assignment {
   @override
   String toString() {
     return 'Assignment(id: $id, title: $title, course: $course, dueDate: $dueDate, '
-        'priority: $priority, isCompleted: $isCompleted)';
+        'priority: $priority, isCompleted: $isCompleted, userId: $userId)';
   }
 }
