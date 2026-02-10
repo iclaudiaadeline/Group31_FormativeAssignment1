@@ -830,16 +830,6 @@ This is an academic project. For questions or suggestions:
 
 ---
 
-## 📞 Support
-
-For technical support or questions:
-
-- **Email**: Contact your course instructor
-- **Issues**: Create an issue in the repository
-- **Documentation**: Refer to additional documentation files in the project
-
----
-
 ## 🙏 Acknowledgments
 
 - **African Leadership University**: For providing the learning opportunity
